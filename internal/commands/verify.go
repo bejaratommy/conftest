@@ -34,6 +34,10 @@ If a directory is specified, it will be recursively searched for
 any data files. Data will be made available in Rego based on
 the structure of the data that was loaded.
 
+When the '--data' flag is not specified, conftest will automatically load the
+'data' directory in the current working directory if it exists. This mirrors
+the default policy directory behaviour.
+
 For example, if a yaml file was loaded that had the structure:
 
 people:

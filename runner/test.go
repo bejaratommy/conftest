@@ -72,7 +72,7 @@ func (t *TestRunner) Run(ctx context.Context, fileList []string) (output.CheckRe
 		RegoVersion:  t.RegoVersion,
 		Capabilities: capabilities,
 	}
-	engine, err := policy.LoadWithData(t.Policy, t.Data, opts)
+	engine, err := policy.LoadWithData(t.Policy, resolveDataPaths(t.Data), opts)
 	if err != nil {
 		return nil, fmt.Errorf("load: %w", err)
 	}

@@ -133,6 +133,10 @@ to data files with the `--data` flag.
 conftest test -p examples/data/policy -d examples/data/exclusions examples/data/service.yaml
 ```
 
+When the `--data` flag is not provided, conftest will automatically load the
+`data` directory in the current working directory if it exists. This mirrors
+the default behaviour of the `--policy` flag, which defaults to `policy`.
+
 The paths at the flag are recursively searched for JSON and YAML files. Data can
 be imported as follows:
 

@@ -42,6 +42,10 @@ under 'policy/exceptions/my_data.yaml', and we execute the following command:
 
 The data is available under 'import data.exceptions'.
 
+When the '--data' flag is not specified, conftest will automatically load the
+'data' directory in the current working directory if it exists. This mirrors
+the default policy directory behaviour.
+
 The test command supports the '--output' flag to specify the type, e.g.:
 
 	$ conftest test -o table -p examples/kubernetes/policy examples/kubernetes/deployment.yaml
