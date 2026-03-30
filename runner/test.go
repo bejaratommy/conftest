@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/open-policy-agent/conftest/downloader"
 	"github.com/open-policy-agent/conftest/output"
@@ -89,6 +90,8 @@ func (t *TestRunner) Run(ctx context.Context, fileList []string) (output.CheckRe
 	namespaces := t.Namespace
 	if t.AllNamespaces {
 		namespaces = engine.Namespaces()
+	} else {
+		namespaces = expandWildcardNamespaces(t.Namespace, engine.Namespaces())
 	}
 
 	var results output.CheckResults
@@ -111,6 +114,36 @@ func (t *TestRunner) Run(ctx context.Context, fileList []string) (output.CheckRe
 	}
 
 	return results, nil
+}
+
+// expandWildcardNamespaces expands any wildcard patterns in the given namespace
+// list against the list of available namespaces. A pattern is considered a
+// wildcard if it contains a "*" character, which is matched using filepath.Match
+// semantics (e.g. "k8s.*", "*.simple", "*").
+// Patterns that do not contain a wildcard are returned as-is.
+func expandWildcardNamespaces(patterns []string, available []string) []string {
+	var result []string
+	seen := make(map[string]bool)
+	for _, pattern := range patterns {
+		if !strings.Contains(pattern, "*") {
+			if !seen[pattern] {
+				seen[pattern] = true
+				result = append(result, pattern)
+			}
+			continue
+		}
+		for _, ns := range available {
+			matched, err := filepath.Match(pattern, ns)
+			if err != nil || !matched {
+				continue
+			}
+			if !seen[ns] {
+				seen[ns] = true
+				result = append(result, ns)
+			}
+		}
+	}
+	return result
 }
 
 func parseFileList(fileList []string, ignoreRegex string) ([]string, error) {
