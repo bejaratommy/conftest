@@ -41,7 +41,7 @@ func TestDownloadFailsWhenFileExists(t *testing.T) {
 
 	// Try to download a policy file with the same name
 	urls := []string{fmt.Sprintf("http://%s/policy.rego", listener.Addr().String())}
-	downloadErr := Download(context.Background(), tmpDir, urls)
+	downloadErr := Download(context.Background(), tmpDir, urls, false)
 
 	// Verify that download fails with the expected error
 	if downloadErr == nil {
@@ -58,5 +58,50 @@ func TestDownloadFailsWhenFileExists(t *testing.T) {
 	}
 	if string(content) != "existing content" {
 		t.Error("Existing file was modified")
+	}
+}
+
+func TestDownloadOverwritesWhenEnabled(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a file that would conflict with the download
+	existingFile := filepath.Join(tmpDir, "policy.rego")
+	if err := os.WriteFile(existingFile, []byte("existing content"), os.FileMode(0600)); err != nil {
+		t.Fatal(err)
+	}
+
+	// Start a test HTTP server on an ephemeral port
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+
+	server := &http.Server{
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			fmt.Fprint(w, "new content")
+		}),
+		ReadHeaderTimeout: 1 * time.Second,
+	}
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- server.Serve(listener)
+	}()
+	defer server.Close()
+
+	// Download a policy file with the same name, allowing overwrite. This mirrors
+	// re-running "conftest test --update" against the same destination.
+	urls := []string{fmt.Sprintf("http://%s/policy.rego", listener.Addr().String())}
+	if err := Download(context.Background(), tmpDir, urls, true); err != nil {
+		t.Errorf("Expected download to overwrite existing file, but it failed: %v", err)
+	}
+
+	// Verify the file was replaced with the freshly downloaded content
+	content, err := os.ReadFile(existingFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(content) != "new content" {
+		t.Errorf("Expected file to be overwritten with new content, got: %q", string(content))
 	}
 }

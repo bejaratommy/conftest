@@ -92,7 +92,7 @@ func installFromURL(ctx context.Context, url string) error {
 	}
 	defer os.RemoveAll(tempDirectory)
 
-	if err := downloader.Download(ctx, tempDirectory, []string{url}); err != nil {
+	if err := downloader.Download(ctx, tempDirectory, []string{url}, false); err != nil {
 		return fmt.Errorf("download plugin: %w", err)
 	}
 
@@ -123,7 +123,7 @@ func installFromDirectory(ctx context.Context, sourceDirectory string) error {
 	if err := os.RemoveAll(plugin.Directory()); err != nil {
 		return fmt.Errorf("remove old plugin: %w", err)
 	}
-	if err := downloader.Download(ctx, plugin.Directory(), []string{sourceDirectory}); err != nil {
+	if err := downloader.Download(ctx, plugin.Directory(), []string{sourceDirectory}, false); err != nil {
 		return fmt.Errorf("download plugin: %w", err)
 	}
 

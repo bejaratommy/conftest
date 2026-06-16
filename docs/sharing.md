@@ -59,3 +59,8 @@ do so with the `--update` flag:
 ```console
 conftest test --update <url(s)> <file-to-test>
 ```
+
+Because the purpose of `--update` is to fetch the latest policies, re-running it
+against the same destination overwrites any previously downloaded policies rather
+than failing. This makes the flag safe to use repeatedly, for example in CI jobs
+that run on every commit.
