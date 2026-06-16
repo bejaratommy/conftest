@@ -32,7 +32,13 @@ var getters = map[string]getter.Getter{
 }
 
 // Download downloads the given policies into the given destination.
-func Download(ctx context.Context, dst string, urls []string) error {
+//
+// When overwrite is false, an existing file at the target path causes an error
+// rather than being clobbered, which guards against unrelated policies that
+// resolve to the same filename overwriting each other. When overwrite is true
+// (for example, "conftest test --update", whose purpose is to refresh policies
+// to their latest version), any existing file is removed and re-downloaded.
+func Download(ctx context.Context, dst string, urls []string, overwrite bool) error {
 	opts := []getter.ClientOption{}
 	for _, url := range urls {
 		detectedURL, err := Detect(url, dst)
@@ -44,7 +50,12 @@ func Download(ctx context.Context, dst string, urls []string) error {
 		filename := filepath.Base(detectedURL)
 		targetPath := filepath.Join(dst, filename)
 		if _, err := os.Stat(targetPath); err == nil {
-			return fmt.Errorf("policy file already exists at %s, refusing to overwrite", targetPath)
+			if !overwrite {
+				return fmt.Errorf("policy file already exists at %s, refusing to overwrite", targetPath)
+			}
+			if err := os.RemoveAll(targetPath); err != nil {
+				return fmt.Errorf("removing existing policy at %s: %w", targetPath, err)
+			}
 		}
 
 		client := &getter.Client{

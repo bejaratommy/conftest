@@ -81,7 +81,7 @@ func NewPullCommand(ctx context.Context) *cobra.Command {
 				policyDir = filepath.Join(".", policyPath)
 			}
 
-			if err := downloader.Download(ctx, policyDir, args); err != nil {
+			if err := downloader.Download(ctx, policyDir, args, false); err != nil {
 				return fmt.Errorf("download policies: %w", err)
 			}
 
