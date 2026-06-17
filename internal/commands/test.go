@@ -102,6 +102,7 @@ func NewTestCommand(ctx context.Context) *cobra.Command {
 				"no-color",
 				"no-fail",
 				"suppress-exceptions",
+				"suppress-successes",
 				"output",
 				"parser",
 				"policy",
@@ -150,6 +151,7 @@ func NewTestCommand(ctx context.Context) *cobra.Command {
 				outputter := output.Get(runner.Output, output.Options{
 					NoColor:            runner.NoColor,
 					SuppressExceptions: runner.SuppressExceptions,
+					SuppressSuccesses:  runner.SuppressSuccesses,
 					Tracing:            runner.Trace,
 					JUnitHideMessage:   viper.GetBool("junit-hide-message"),
 				})
@@ -173,6 +175,7 @@ func NewTestCommand(ctx context.Context) *cobra.Command {
 	cmd.Flags().Bool("no-fail", false, "Return an exit code of zero even if a policy fails")
 	cmd.Flags().Bool("no-color", false, "Disable color when printing")
 	cmd.Flags().Bool("suppress-exceptions", false, "Do not include exceptions in output")
+	cmd.Flags().Bool("suppress-successes", false, "Do not include successful input files in output (only supported by the github output)")
 	cmd.Flags().Bool("all-namespaces", false, "Test policies found in all namespaces")
 	cmd.Flags().Bool("quiet", false, "Disable successful test output")
 

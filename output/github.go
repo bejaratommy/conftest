@@ -21,12 +21,17 @@ const (
 // https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions
 type GitHub struct {
 	writer io.Writer
+
+	// suppressSuccesses skips emitting a group for input files whose checks
+	// all passed, keeping the annotations focused on files that need attention.
+	suppressSuccesses bool
 }
 
 // NewGitHub creates a new GitHub with the given writer.
-func NewGitHub(w io.Writer) *GitHub {
+func NewGitHub(w io.Writer, suppressSuccesses bool) *GitHub {
 	github := GitHub{
-		writer: w,
+		writer:            w,
+		suppressSuccesses: suppressSuccesses,
 	}
 
 	return &github
@@ -45,6 +50,13 @@ func (g *GitHub) Output(checkResults CheckResults) error {
 		totalWarnings += len(result.Warnings)
 		totalSkipped += len(result.Skipped)
 		totalSuccesses += result.Successes
+
+		// When configured, skip files whose checks all passed so the output is
+		// not cluttered with groups for files that need no attention. Totals are
+		// still accumulated above so the summary line remains accurate.
+		if g.suppressSuccesses && len(result.Failures) == 0 && len(result.Warnings) == 0 && len(result.Exceptions) == 0 && len(result.Skipped) == 0 {
+			continue
+		}
 
 		numPolicies := result.Successes + len(result.Failures) + len(result.Warnings) + len(result.Exceptions) + len(result.Skipped)
 

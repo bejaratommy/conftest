@@ -11,9 +11,10 @@ import (
 
 func TestGitHub(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    CheckResults
-		expected []string
+		name              string
+		input             CheckResults
+		suppressSuccesses bool
+		expected          []string
 	}{
 		{
 			name: "no warnings or errors",
@@ -139,6 +140,51 @@ func TestGitHub(t *testing.T) {
 				"",
 			},
 		},
+		{
+			name:              "suppress-successes omits files that only have successes",
+			suppressSuccesses: true,
+			input: CheckResults{
+				{
+					FileName:  "pass.yaml",
+					Namespace: "namespace",
+					Successes: 3,
+				},
+				{
+					FileName:  "fail.yaml",
+					Namespace: "namespace",
+					Failures:  []Result{{Message: "first failure"}},
+				},
+			},
+			expected: []string{
+				"::group::Testing \"fail.yaml\" against 1 policies in namespace \"namespace\"",
+				"::error file=fail.yaml,line=1::first failure",
+				"::notice file=fail.yaml,line=1::Number of successful checks: 0",
+				"::endgroup::",
+				// The 3 successes from the omitted pass.yaml are still counted.
+				"4 tests, 3 passed, 0 warnings, 1 failure, 0 exceptions",
+				"",
+			},
+		},
+		{
+			name:              "suppress-successes keeps files that also have skipped checks",
+			suppressSuccesses: true,
+			input: CheckResults{
+				{
+					FileName:  "skip.yaml",
+					Namespace: "namespace",
+					Skipped:   []Result{{Message: "first skipped"}},
+					Successes: 2,
+				},
+			},
+			expected: []string{
+				"::group::Testing \"skip.yaml\" against 3 policies in namespace \"namespace\"",
+				"::notice file=skip.yaml,line=1::Test was skipped: first skipped",
+				"::notice file=skip.yaml,line=1::Number of successful checks: 2",
+				"::endgroup::",
+				"3 tests, 2 passed, 0 warnings, 0 failures, 0 exceptions",
+				"",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -146,7 +192,7 @@ func TestGitHub(t *testing.T) {
 			expected := strings.Join(tt.expected, "\n")
 
 			buf := new(bytes.Buffer)
-			if err := NewGitHub(buf).Output(tt.input); err != nil {
+			if err := NewGitHub(buf, tt.suppressSuccesses).Output(tt.input); err != nil {
 				t.Fatal("output GitHub:", err)
 			}
 			if diff := cmp.Diff(buf.String(), expected); diff != "" {

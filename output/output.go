@@ -20,6 +20,7 @@ type Options struct {
 	Tracing            bool
 	NoColor            bool
 	SuppressExceptions bool
+	SuppressSuccesses  bool
 	ShowSkipped        bool
 	JUnitHideMessage   bool
 	File               *os.File
@@ -81,7 +82,7 @@ func newOutputter(format string, options Options) Outputter {
 	case OutputJUnit:
 		return NewJUnit(options.File, options.JUnitHideMessage)
 	case OutputGitHub:
-		return NewGitHub(options.File)
+		return NewGitHub(options.File, options.SuppressSuccesses)
 	case OutputAzureDevOps:
 		return NewAzureDevOps(options.File)
 	case OutputSARIF:

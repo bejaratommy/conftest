@@ -31,6 +31,7 @@ type TestRunner struct {
 	NoColor            bool `mapstructure:"no-color"`
 	NoFail             bool `mapstructure:"no-fail"`
 	SuppressExceptions bool `mapstructure:"suppress-exceptions"`
+	SuppressSuccesses  bool `mapstructure:"suppress-successes"`
 	ShowBuiltinErrors  bool `mapstructure:"show-builtin-errors"`
 	Combine            bool
 	Quiet              bool

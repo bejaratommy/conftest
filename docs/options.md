@@ -305,6 +305,15 @@ success file=examples/kubernetes/deployment.yaml 1
 5 tests, 1 passed, 0 warnings, 4 failures, 0 exceptions
 ```
 
+By default a group is emitted for every input file, including ones where all
+checks passed. To reduce noise on large runs, pass `--suppress-successes` to omit
+files that only have successes. The omitted successes are still reflected in the
+final summary line.
+
+```console
+$ conftest test -o github --suppress-successes -p examples/kubernetes/policy examples/kubernetes/deployment.yaml
+```
+
 Use Conftest directly to check incoming Pull Requests in GitHub:
 
 ```yaml
