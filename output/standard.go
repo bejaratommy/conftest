@@ -30,6 +30,10 @@ type Standard struct {
 	// ShowSkipped whether to show skipped tests
 	// in the output.
 	ShowSkipped bool
+
+	// Quiet will restrict trace output to failing queries
+	// when set to true.
+	Quiet bool
 }
 
 // NewStandard creates a new Standard with the given writer.
@@ -159,6 +163,10 @@ func (s *Standard) outputPrints(results CheckResults, colorizer aurora.Aurora) {
 func (s *Standard) outputTrace(results CheckResults, colorizer aurora.Aurora) {
 	for _, result := range results {
 		for _, query := range result.Queries {
+			if s.Quiet && query.Passed() {
+				continue
+			}
+
 			var color aurora.Color
 			if query.Passed() {
 				color = aurora.GreenFg

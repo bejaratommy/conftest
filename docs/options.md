@@ -360,6 +360,10 @@ queries are processed.
 format (`--output=stdout`). When both `--trace` and `--output` are specified,
 the output format takes priority and tracing will not be used.
 
+Combining `--trace` with `--quiet` restricts the trace output to queries that
+failed, which makes it easier to focus on the policy evaluation that needs
+attention.
+
 Example usage:
 
 ```console

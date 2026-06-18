@@ -22,6 +22,7 @@ type Options struct {
 	SuppressExceptions bool
 	ShowSkipped        bool
 	JUnitHideMessage   bool
+	Quiet              bool
 	File               *os.File
 }
 
@@ -51,6 +52,7 @@ func Get(format string, options Options) Outputter {
 			Writer:  os.Stderr,
 			NoColor: options.NoColor,
 			Tracing: true,
+			Quiet:   options.Quiet,
 		}
 
 		// Return a trace outputter that handles both trace and regular output
@@ -71,6 +73,7 @@ func newOutputter(format string, options Options) Outputter {
 			SuppressExceptions: options.SuppressExceptions,
 			Tracing:            options.Tracing,
 			ShowSkipped:        options.ShowSkipped,
+			Quiet:              options.Quiet,
 		}
 	case OutputJSON:
 		return NewJSON(options.File)

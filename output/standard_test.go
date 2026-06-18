@@ -109,3 +109,64 @@ func TestStandard(t *testing.T) {
 		})
 	}
 }
+
+func TestStandardTraceQuiet(t *testing.T) {
+	results := CheckResults{
+		{
+			FileName:  "test.yaml",
+			Namespace: "main",
+			Queries: []QueryResult{
+				{
+					Query:  "data.main.passing",
+					Traces: []string{"TRACE passing query"},
+				},
+				{
+					Query:   "data.main.deny",
+					Results: []Result{{Message: "boom"}},
+					Traces:  []string{"TRACE failing query"},
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name      string
+		quiet     bool
+		wantTrace []string
+		skipTrace []string
+	}{
+		{
+			name:      "without quiet traces all queries",
+			quiet:     false,
+			wantTrace: []string{"TRACE passing query", "TRACE failing query"},
+		},
+		{
+			name:      "with quiet traces only failing queries",
+			quiet:     true,
+			wantTrace: []string{"TRACE failing query"},
+			skipTrace: []string{"TRACE passing query"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf := new(bytes.Buffer)
+			standard := Standard{Writer: buf, NoColor: true, Tracing: true, Quiet: tt.quiet}
+			if err := standard.outputTraceOnly(results); err != nil {
+				t.Fatal("output trace:", err)
+			}
+
+			actual := buf.String()
+			for _, want := range tt.wantTrace {
+				if !strings.Contains(actual, want) {
+					t.Errorf("expected trace to contain %q, got %q", want, actual)
+				}
+			}
+			for _, skip := range tt.skipTrace {
+				if strings.Contains(actual, skip) {
+					t.Errorf("expected trace to omit %q, got %q", skip, actual)
+				}
+			}
+		})
+	}
+}

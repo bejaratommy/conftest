@@ -128,3 +128,15 @@ $ conftest test --trace --output=table deployment.yaml
 # Capture trace output to a file while viewing table output
 $ conftest test --trace --output=table deployment.yaml 2>trace.log
 ```
+
+## Limiting trace output to failures
+
+Trace output for a passing policy is rarely useful and can bury the trace of
+the policy that actually failed. Combining `--trace` with `--quiet` restricts
+the trace output to queries that failed, making it easier to find the relevant
+evaluation:
+
+```console
+# Only emit traces for failing queries
+$ conftest test --trace --quiet deployment.yaml
+```

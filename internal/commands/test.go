@@ -151,6 +151,7 @@ func NewTestCommand(ctx context.Context) *cobra.Command {
 					NoColor:            runner.NoColor,
 					SuppressExceptions: runner.SuppressExceptions,
 					Tracing:            runner.Trace,
+					Quiet:              runner.Quiet,
 					JUnitHideMessage:   viper.GetBool("junit-hide-message"),
 				})
 				if err := outputter.Output(results); err != nil {
