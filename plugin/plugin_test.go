@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -261,6 +262,38 @@ func TestPluginExec(t *testing.T) {
 			t.Fatal("expected error but got none")
 		}
 	})
+
+	// A plugin that exits non-zero must surface its exit code via *ExitError so
+	// the caller can propagate it. Exit codes 1 and 2 were previously swallowed
+	// (Exec returned nil), causing conftest to always exit 0.
+	// See https://github.com/open-policy-agent/conftest/issues/741.
+	for _, code := range []int{1, 2, 42} {
+		t.Run(fmt.Sprintf("propagates exit code %d", code), func(t *testing.T) {
+			p := &Plugin{
+				Name:    fmt.Sprintf("exit-code-%d", code),
+				Command: fmt.Sprintf("exit %d", code),
+			}
+			createTestPlugin(t, p)
+
+			plugin, err := Load(p.Name)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = plugin.Exec(t.Context(), nil)
+			if err == nil {
+				t.Fatalf("expected error for exit code %d but got none", code)
+			}
+
+			var exitErr *ExitError
+			if !errors.As(err, &exitErr) {
+				t.Fatalf("expected *ExitError, got %T: %v", err, err)
+			}
+			if exitErr.Code != code {
+				t.Errorf("exit code = %d, want %d", exitErr.Code, code)
+			}
+		})
+	}
 }
 
 // Helper to create a test plugin in the cache directory

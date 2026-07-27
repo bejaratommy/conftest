@@ -80,6 +80,13 @@ func newCommandFromPlugin(ctx context.Context, p *plugin.Plugin) *cobra.Command 
 		Long:  p.Description,
 		RunE: func(_ *cobra.Command, args []string) error {
 			if err := p.Exec(ctx, args); err != nil {
+				// Propagate the plugin's own exit code so that
+				// `conftest <plugin>` mirrors it.
+				var exitErr *plugin.ExitError
+				if errors.As(err, &exitErr) {
+					os.Exit(exitErr.Code)
+				}
+
 				return fmt.Errorf("execute plugin: %v", err)
 			}
 
