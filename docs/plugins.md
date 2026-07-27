@@ -96,7 +96,6 @@ command: $CONFTEST_PLUGIN_DIR/kubectl-conftest.sh
 The plugin is responsible for handling flags and arguments. Any arguments are
 passed to the plugin from the conftest command.
 
-Exit codes 1 and 2 are treated as a special exit code in the Conftest CLI. This
-indicates a test failure and no error message will be printed. In your plugin
-you should return an exit code other than 0, 1, or 2 if your plugin fails for
-any reason other than a test failure.
+The plugin's exit code is propagated as Conftest's own exit code, so
+`conftest <plugin>` exits with whatever code the plugin returns. A non-zero
+exit code is surfaced directly, without an additional Conftest error message.

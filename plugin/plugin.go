@@ -2,16 +2,28 @@ package plugin
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
 
 	"sigs.k8s.io/yaml"
 )
+
+// ExitError indicates that a plugin process terminated with a non-zero exit
+// code. It carries that code so callers can propagate it as Conftest's own
+// exit code.
+type ExitError struct {
+	Code int
+	err  error
+}
+
+func (e *ExitError) Error() string { return e.err.Error() }
+
+func (e *ExitError) Unwrap() error { return e.err }
 
 const (
 	cacheDir       = ".conftest"
@@ -107,27 +119,18 @@ func (p *Plugin) Exec(ctx context.Context, args []string) error {
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
 
-	// If an error is found during the execution of the plugin, figure
-	// out if the error was from not being able to execute the plugin or
-	// an error set by the plugin itself.
+	// If an error is found during the execution of the plugin, figure out if
+	// the error was from not being able to execute the plugin or a non-zero
+	// exit code set by the plugin itself. In the latter case, propagate the
+	// plugin's exit code so that `conftest <plugin>` mirrors it.
+	// See https://github.com/open-policy-agent/conftest/issues/741.
 	if err := cmd.Run(); err != nil {
-		exiterr, ok := err.(*exec.ExitError)
-		if !ok {
+		var exiterr *exec.ExitError
+		if !errors.As(err, &exiterr) {
 			return fmt.Errorf("exit: %w", err)
 		}
 
-		status, ok := exiterr.Sys().(syscall.WaitStatus)
-		if !ok {
-			return fmt.Errorf("status: %w", err)
-		}
-
-		// Conftest can either return 1 or 2 for an error. If Conftest
-		// returns an error, let it handle its own error.
-		if status.ExitStatus() == 1 || status.ExitStatus() == 2 {
-			return nil
-		}
-
-		return fmt.Errorf("plugin exec: %w", err)
+		return &ExitError{Code: exiterr.ExitCode(), err: err}
 	}
 
 	return nil
