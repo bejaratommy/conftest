@@ -114,6 +114,15 @@ func (t *TestRunner) Run(ctx context.Context, fileList []string) (output.CheckRe
 }
 
 func parseFileList(fileList []string, ignoreRegex string) ([]string, error) {
+	var ignore *regexp.Regexp
+	if ignoreRegex != "" {
+		var err error
+		ignore, err = regexp.Compile(ignoreRegex)
+		if err != nil {
+			return nil, fmt.Errorf("compile ignore regex: %w", err)
+		}
+	}
+
 	var files []string
 	for _, file := range fileList {
 		if file == "" {
@@ -137,7 +146,7 @@ func parseFileList(fileList []string, ignoreRegex string) ([]string, error) {
 			}
 
 			files = append(files, directoryFiles...)
-		} else {
+		} else if ignore == nil || !ignore.MatchString(file) {
 			files = append(files, file)
 		}
 	}
