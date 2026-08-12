@@ -137,6 +137,15 @@ func renameStdinConfiguration(configurations map[string]any, stdinFilename strin
 }
 
 func parseFileList(fileList []string, ignoreRegex string) ([]string, error) {
+	var ignore *regexp.Regexp
+	if ignoreRegex != "" {
+		var err error
+		ignore, err = regexp.Compile(ignoreRegex)
+		if err != nil {
+			return nil, fmt.Errorf("given regexp couldn't be parsed :%w", err)
+		}
+	}
+
 	var files []string
 	for _, file := range fileList {
 		if file == "" {
@@ -161,6 +170,10 @@ func parseFileList(fileList []string, ignoreRegex string) ([]string, error) {
 
 			files = append(files, directoryFiles...)
 		} else {
+			if ignore != nil && ignore.MatchString(file) {
+				continue
+			}
+
 			files = append(files, file)
 		}
 	}

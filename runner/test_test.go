@@ -1,7 +1,10 @@
 package runner
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -42,6 +45,64 @@ func TestRenameStdinConfiguration(t *testing.T) {
 				t.Errorf("renameStdinConfiguration() = %v, want %v", tt.configs, tt.want)
 			}
 		})
+	}
+}
+
+func TestParseFileListIgnoresExplicitlyProvidedFiles(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+
+	deploymentFile := filepath.Join(dir, "deployment.tf")
+	providerFile := filepath.Join(dir, "provider.tf")
+
+	for _, f := range []string{deploymentFile, providerFile} {
+		if err := os.WriteFile(f, []byte(""), 0o644); err != nil {
+			t.Fatalf("write file %s: %v", f, err)
+		}
+	}
+
+	got, err := parseFileList([]string{deploymentFile, providerFile}, `.*/provider\.tf`)
+	if err != nil {
+		t.Fatalf("parseFileList() returned error: %v", err)
+	}
+
+	want := []string{deploymentFile}
+
+	sort.Strings(got)
+	sort.Strings(want)
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("parseFileList() = %v, want %v", got, want)
+	}
+}
+
+func TestParseFileListWithoutIgnoreKeepsAllExplicitFiles(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+
+	deploymentFile := filepath.Join(dir, "deployment.tf")
+	providerFile := filepath.Join(dir, "provider.tf")
+
+	for _, f := range []string{deploymentFile, providerFile} {
+		if err := os.WriteFile(f, []byte(""), 0o644); err != nil {
+			t.Fatalf("write file %s: %v", f, err)
+		}
+	}
+
+	got, err := parseFileList([]string{deploymentFile, providerFile}, "")
+	if err != nil {
+		t.Fatalf("parseFileList() returned error: %v", err)
+	}
+
+	want := []string{deploymentFile, providerFile}
+
+	sort.Strings(got)
+	sort.Strings(want)
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("parseFileList() = %v, want %v", got, want)
 	}
 }
 
